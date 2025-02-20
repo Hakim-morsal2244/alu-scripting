@@ -1,38 +1,45 @@
 #!/usr/bin/python3
-
 """
 Displays the titles of 10 hot posts listed for a subreddit
 """
 
-from requests import get
-import subprocess
+import requests
 
 
 def top_ten(subreddit):
     """
-    The Function that fetches the Reddit API
+    Queries the Reddit API and prints the titles of the first 10 hot posts listed
+    for a given subreddit.
+
+    Args:
+        subreddit (str): The name of the subreddit to query.
     """
-    user_agent = {'User-agent': 'Google Chrome Version 81.0.4044.129'}
+    user_agent = {'User-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36'}
+    url = f'https://www.reddit.com/r/{subreddit}/hot/.json'
     params = {'limit': 10}
-    url = 'https://www.reddit.com/r/{}/hot/.json'.format(subreddit)
+    
+    # Prevent following redirects
+    response = requests.get(url, headers=user_agent, params=params, allow_redirects=False)
+    
+    # If the subreddit does not exist (404 error)
+    if response.status_code == 404:
+        print("None")
+        return
 
-    response = get(url, headers=user_agent, params=params, allow_redirects=False)
-
-    # Check for valid subreddit (status code 200)
+    # If the response is successful
     if response.status_code == 200:
         try:
             results = response.json()
-            my_data = results.get('data').get('children')
+            hot_posts = results.get('data', {}).get('children', [])
+            if not hot_posts:
+                print("None")
+                return
 
-            # Print titles of the top 10 posts
-            for i in my_data:
-                print(i.get('data').get('title'))
-
+            # Print the titles of the first 10 hot posts
+            for post in hot_posts:
+                print(post.get('data', {}).get('title', "None"))
         except Exception:
             print("None")
-    elif response.status_code == 404:
-        # If subreddit does not exist, print None
-        print("None")
     else:
-        # Handle other errors (like 403, etc.)
         print("None")
+
